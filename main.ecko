@@ -1,0 +1,160 @@
+# url - URL parsing, query strings, and reference resolution for Ecko.
+#
+#   import url
+#
+#   p = url.parse("https://ecko.sh/docs?q=1")   # { scheme, host, port, path, ... }
+#   url.query_parse("a=1&b=2")                   # { a: "1", b: "2" }
+#   url.join("https://a.com/a/b", "../c")        # "https://a.com/c"  (RFC 3986)
+#
+# Pure Ecko: `parse` uses the RFC 3986 regex via std.re; path resolution works
+# on `/`-split segments. No capabilities. NB: this module exports `join`, which
+# shadows the builtin - internal joins use `core.join`.
+
+import std.re
+import std.encoding
+
+# RFC 3986 Appendix B: scheme / authority / path / query / fragment.
+RFC = "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?"
+
+# ---- percent codecs (re-exported) ------------------------------------------
+export fn encode(s) = encoding.url_encode(s)
+export fn decode(s) = encoding.url_decode(s)
+
+# ---- parse -----------------------------------------------------------------
+fn parse_authority(auth) {
+    at = split(auth, "@")
+    userinfo = if len(at) > 1 { at[0] } else { "" }
+    hostport = at[len(at) - 1]
+    hp = split(hostport, ":")
+    port = if len(hp) > 1 and hp[1] != "" { int(hp[1]) } else { null }
+    { userinfo: userinfo, host: hp[0], port: port }
+}
+
+# parse(url) -> { scheme, userinfo, host, port, path, query, fragment }.
+export fn parse(u) {
+    caps = re.captures(RFC, u)
+    a = parse_authority(caps[4])
+    {
+        scheme: caps[2],
+        userinfo: a.userinfo,
+        host: a.host,
+        port: a.port,
+        path: caps[5],
+        query: caps[7],
+        fragment: caps[9],
+    }
+}
+
+# ---- query strings ---------------------------------------------------------
+# query_parse(str) -> map. `+` decodes to space (form encoding), then %xx.
+export fn query_parse(q) {
+    mut m = empty_map()
+    if q == "" { return m }
+    for pair in split(q, "&") {
+        kv = split(pair, "=")
+        k = decode(replace(kv[0], "+", " "))
+        v = if len(kv) > 1 { decode(replace(kv[1], "+", " ")) } else { "" }
+        m = insert(m, k, v)
+    }
+    m
+}
+
+# query_build(map) -> "k=v&..." with keys sorted and values percent-encoded.
+export fn query_build(m) {
+    mut parts = []
+    for k in sort(keys(m)) {
+        parts = push(parts, encode(k) + "=" + encode(string(m[k])))
+    }
+    core.join(parts, "&")
+}
+
+# ---- recompose -------------------------------------------------------------
+# build(parts) -> a URL string (the inverse of parse).
+export fn build(parts) {
+    mut s = ""
+    scheme = get(parts, "scheme")
+    if scheme != null and scheme != "" { s = s + scheme + ":" }
+    host = get(parts, "host")
+    if host != null and host != "" {
+        s = s + "//"
+        userinfo = get(parts, "userinfo")
+        if userinfo != null and userinfo != "" { s = s + userinfo + "@" }
+        s = s + host
+        port = get(parts, "port")
+        if port != null and port != "" { s = s + ":" + string(port) }
+    }
+    path = get(parts, "path")
+    if path != null { s = s + path }
+    query = get(parts, "query")
+    if query != null and query != "" { s = s + "?" + query }
+    fragment = get(parts, "fragment")
+    if fragment != null and fragment != "" { s = s + "#" + fragment }
+    s
+}
+
+# ---- path normalization + join ---------------------------------------------
+# Collapse `.` and `..` segments (RFC 3986 remove_dot_segments), segment-wise.
+fn normalize_path(path) {
+    absolute = starts_with(path, "/")
+    trailing = ends_with(path, "/")
+    mut out = []
+    # ".." pops a segment; a real segment is kept; "" (leading/double slash)
+    # and "." are skipped.
+    for seg in split(path, "/") {
+        if seg == ".." {
+            if len(out) > 0 { out = take(out, len(out) - 1) }
+        } else if seg != "" and seg != "." {
+            out = push(out, seg)
+        }
+    }
+    body = core.join(out, "/")
+    prefix = if absolute { "/" } else { "" }
+    suffix = if trailing and len(out) > 0 { "/" } else { "" }
+    prefix + body + suffix
+}
+
+# Everything up to and including the last `/` of a path.
+fn dir_of(path) {
+    segs = split(path, "/")
+    core.join(take(segs, len(segs) - 1), "/") + "/"
+}
+
+# join(base, ref) -> the reference resolved against base (RFC 3986 section 5).
+export fn join(base, ref) {
+    if parse(ref).scheme != "" { return ref }
+    b = parse(base)
+    if starts_with(ref, "//") {
+        r = parse(ref)
+        return build(
+            {
+                scheme: b.scheme,
+                userinfo: r.userinfo,
+                host: r.host,
+                port: r.port,
+                path: normalize_path(r.path),
+                query: r.query,
+                fragment: r.fragment,
+            },
+        )
+    }
+    r = parse(ref)
+    resolved = if starts_with(ref, "/") {
+        normalize_path(r.path)
+    } else if r.path == "" {
+        b.path
+    } else {
+        normalize_path(dir_of(b.path) + r.path)
+    }
+    query = if r.path == "" and r.query == "" { b.query } else { r.query }
+    build(
+        {
+            scheme: b.scheme,
+            userinfo: b.userinfo,
+            host: b.host,
+            port: b.port,
+            path: resolved,
+            query: query,
+            fragment: r.fragment,
+        },
+    )
+}

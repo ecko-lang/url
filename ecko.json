@@ -1,0 +1,10 @@
+{
+  "name": "url",
+  "version": "0.1.0",
+  "entrypoint": "main.ecko",
+  "description": "URL parsing, query strings, and reference resolution for Ecko.",
+  "author": "Sean Nieuwoudt <sean@underwulf.com>",
+  "license": "MIT",
+  "capabilities": [],
+  "dependencies": {}
+}

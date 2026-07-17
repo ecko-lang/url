@@ -1,0 +1,18 @@
+# url demo.
+import "./main.ecko"
+url = main
+
+p = url.parse("https://ada@ecko.sh:8080/docs/guide?section=intro&lang=en#top")
+print("scheme:   {p.scheme}")
+print("host:     {p.host}")
+print("port:     {p.port}")
+print("path:     {p.path}")
+
+q = url.query_parse(p.query)
+section = get(q, "section")
+print("section:  {section}")
+
+resolved = url.join("https://ecko.sh/a/b/c", "../x")
+rebuilt = url.build(p)
+print("resolved: {resolved}")
+print("rebuilt:  {rebuilt}")
