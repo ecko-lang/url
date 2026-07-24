@@ -1,12 +1,12 @@
-# url
+# URL - Ecko Std Lib Package
 
 URL parsing, query strings, and reference resolution for [Ecko](https://ecko.sh),
-written in Ecko. Pure — no capabilities.
+written in Ecko.
 
 ## Install
 
 ```bash
-ecko add https://github.com/ecko-sh/url
+ecko get github.com/ecko-sh/url
 ```
 
 ## Usage
@@ -41,7 +41,7 @@ url.decode("a%20b")   # "a b"
 
 ## Notes
 
-- `parse` uses the RFC 3986 Appendix B regex, so it never fails — an
+- `parse` uses the RFC 3986 Appendix B regex, so it never fails - an
   unusual string just yields mostly-empty components.
 - `join` implements the RFC reference-transform, including dot-segment removal.
 - IPv6 host literals (`[::1]`) are not specially handled in v1.
@@ -56,4 +56,4 @@ Offline and deterministic; `example.ecko` is a runnable demo.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).

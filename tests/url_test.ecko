@@ -3,7 +3,7 @@ import std.test
 import "../main.ecko"
 u = main
 
-test.case("parse a full URL into components", || {
+test.case("parse a full URL into components", fn() {
     p = u.parse("https://ada:pw@example.com:8080/path/to?x=1&y=2#frag")
     test.eq(p.scheme, "https")
     test.eq(p.userinfo, "ada:pw")
@@ -14,7 +14,7 @@ test.case("parse a full URL into components", || {
     test.eq(p.fragment, "frag")
 })
 
-test.case("parse a simple URL (no port / userinfo / query)", || {
+test.case("parse a simple URL (no port / userinfo / query)", fn() {
     p = u.parse("http://ecko.sh/docs")
     test.eq(p.scheme, "http")
     test.eq(p.host, "ecko.sh")
@@ -25,23 +25,23 @@ test.case("parse a simple URL (no port / userinfo / query)", || {
     test.eq(p.fragment, "")
 })
 
-test.case("query_parse decodes + and %xx", || {
+test.case("query_parse decodes + and %xx", fn() {
     m = u.query_parse("name=Ada+Lovelace&lang=en")
     test.eq(get(m, "name"), "Ada Lovelace")
     test.eq(get(m, "lang"), "en")
     test.eq(u.query_parse(""), {})
 })
 
-test.case("query_build encodes values and sorts keys", || {
+test.case("query_build encodes values and sorts keys", fn() {
     test.eq(u.query_build({ a: "1", b: "two words" }), "a=1&b=two%20words")
 })
 
-test.case("encode / decode percent codecs", || {
+test.case("encode / decode percent codecs", fn() {
     test.eq(u.encode("a b/c"), "a%20b%2Fc")
     test.eq(u.decode("a%20b"), "a b")
 })
 
-test.case("build recomposes a URL", || {
+test.case("build recomposes a URL", fn() {
     test.eq(
         u.build({ scheme: "https", host: "a.com", port: 8080, path: "/p", query: "x=1" }),
         "https://a.com:8080/p?x=1",
@@ -49,7 +49,7 @@ test.case("build recomposes a URL", || {
     test.eq(u.build(u.parse("http://ecko.sh/docs")), "http://ecko.sh/docs")
 })
 
-test.case("join resolves references (RFC 3986 section 5.4)", || {
+test.case("join resolves references (RFC 3986 section 5.4)", fn() {
     base = "http://a/b/c/d;p?q"
     test.eq(u.join(base, "g"), "http://a/b/c/g")
     test.eq(u.join(base, "./g"), "http://a/b/c/g")

@@ -1,6 +1,6 @@
 {
-  "name": "url",
-  "version": "0.1.0",
+  "module": "github.com/ecko-sh/url",
+  "version": "0.9.1",
   "entrypoint": "main.ecko",
   "description": "URL parsing, query strings, and reference resolution for Ecko.",
   "author": "Sean Nieuwoudt <sean@underwulf.com>",
