@@ -17,7 +17,9 @@ import std.encoding
 RFC = "^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?"
 
 # ---- percent codecs (re-exported) ------------------------------------------
+## encode(s) -> `s` percent-encoded for use in a URL.
 export fn encode(s) = encoding.url_encode(s)
+## decode(s) -> `s` with percent-escapes resolved, so `%20` becomes a space.
 export fn decode(s) = encoding.url_decode(s)
 
 # ---- parse -----------------------------------------------------------------
@@ -30,7 +32,7 @@ fn parse_authority(auth) {
     { userinfo: userinfo, host: hp[0], port: port }
 }
 
-# parse(url) -> { scheme, userinfo, host, port, path, query, fragment }.
+## parse(url) -> { scheme, userinfo, host, port, path, query, fragment }.
 export fn parse(u) {
     caps = re.captures(RFC, u)
     a = parse_authority(caps[4])
@@ -46,7 +48,7 @@ export fn parse(u) {
 }
 
 # ---- query strings ---------------------------------------------------------
-# query_parse(str) -> map. `+` decodes to space (form encoding), then %xx.
+## query_parse(str) -> map. `+` decodes to space (form encoding), then %xx.
 export fn query_parse(q) {
     mut m = empty_map()
     if q == "" { return m }
@@ -59,7 +61,7 @@ export fn query_parse(q) {
     m
 }
 
-# query_build(map) -> "k=v&..." with keys sorted and values percent-encoded.
+## query_build(map) -> "k=v&..." with keys sorted and values percent-encoded.
 export fn query_build(m) {
     mut parts = []
     for k in sort(keys(m)) {
@@ -69,7 +71,7 @@ export fn query_build(m) {
 }
 
 # ---- recompose -------------------------------------------------------------
-# build(parts) -> a URL string (the inverse of parse).
+## build(parts) -> a URL string (the inverse of parse).
 export fn build(parts) {
     mut s = ""
     scheme = get(parts, "scheme")
@@ -119,7 +121,7 @@ fn dir_of(path) {
     core.join(take(segs, len(segs) - 1), "/") + "/"
 }
 
-# join(base, ref) -> the reference resolved against base (RFC 3986 section 5).
+## join(base, ref) -> the reference resolved against base (RFC 3986 section 5).
 export fn join(base, ref) {
     if parse(ref).scheme != "" { return ref }
     b = parse(base)
