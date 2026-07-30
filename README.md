@@ -6,7 +6,7 @@ written in Ecko.
 ## Install
 
 ```bash
-ecko get github.com/ecko-sh/url
+ecko get github.com/ecko-lang/url
 ```
 
 ## Usage
